@@ -60,9 +60,8 @@
       display: flex; align-items: center; gap: 12px;
       padding: 11px 20px; min-width: 600px;
     }
-    .legend {
-      bottom: 100px; right: 16px; padding: 12px 14px;
-      width: 220px; max-height: 72vh; overflow-y: auto;
+    .dbz-legend {
+      bottom: 100px; right: 16px; padding: 12px 14px; width: 148px;
     }
 
     h3 {
@@ -90,13 +89,12 @@
     #frame { font-size: 12px; color: var(--muted); text-align: center; margin-top: 3px; }
     .slider-wrap { flex: 1; min-width: 220px; }
 
-    .legend-item {
-      display: flex; align-items: center; gap: 9px;
-      margin: 4px 0; font-size: 12.5px; line-height: 1.25;
+    .dbz-item {
+      display: flex; align-items: center; gap: 8px;
+      margin: 4px 0; font-size: 12px;
     }
-    .swatch {
-      width: 15px; height: 15px; border-radius: 3px; flex-shrink: 0;
-      border: 1px solid rgba(255,255,255,0.1);
+    .dbz-color {
+      width: 16px; height: 14px; border-radius: 3px;
     }
   </style>
 </head>
@@ -118,13 +116,14 @@
       <button id="btnSat">Спутник</button>
     </div>
     <div class="row">
-      <button id="btnArrows">Движение</button>
+      <button id="btnAlerts">ОЯ</button>
+      <button id="btnArrows" class="active">Движение</button>
     </div>
 
     <h3 style="margin-top:14px">Цвет радара</h3>
     <select id="scheme">
-      <option value="7" selected>Rainbow (рекомендуется)</option>
       <option value="2">Universal Blue</option>
+      <option value="7">Rainbow</option>
       <option value="4">TWC</option>
       <option value="6">NEXRAD</option>
       <option value="3">TITAN</option>
@@ -153,27 +152,14 @@
     <div id="time">--:--</div>
   </div>
 
-  <!-- Легенда, максимально соответствующая цветам -->
-  <div class="panel legend">
-    <h3>Погодные явления</h3>
-    <div class="legend-item"><div class="swatch" style="background:#9ca3af"></div>1 — Обл. в сред. ярусе</div>
-    <div class="legend-item"><div class="swatch" style="background:#93c5fd"></div>2 — Слоист. облачность</div>
-    <div class="legend-item"><div class="swatch" style="background:#86efac"></div>3 — Осадки слабые</div>
-    <div class="legend-item"><div class="swatch" style="background:#4ade80"></div>4 — Осадки умеренные</div>
-    <div class="legend-item"><div class="swatch" style="background:#22c55e"></div>5 — Осадки сильные</div>
-    <div class="legend-item"><div class="swatch" style="background:#fde047"></div>6 — Кучевая облачность</div>
-    <div class="legend-item"><div class="swatch" style="background:#60a5fa"></div>7 — Ливень слабый</div>
-    <div class="legend-item"><div class="swatch" style="background:#3b82f6"></div>8 — Ливень умеренный</div>
-    <div class="legend-item"><div class="swatch" style="background:#1d4ed8"></div>9 — Ливень сильный</div>
-    <div class="legend-item"><div class="swatch" style="background:#fdba74"></div>10 — Гроза (R)</div>
-    <div class="legend-item"><div class="swatch" style="background:#fb7185"></div>11 — Гроза R)</div>
-    <div class="legend-item"><div class="swatch" style="background:#ef4444"></div>12 — Гроза R</div>
-    <div class="legend-item"><div class="swatch" style="background:#f97316"></div>13 — Град слабый</div>
-    <div class="legend-item"><div class="swatch" style="background:#ea580c"></div>14 — Град умеренный</div>
-    <div class="legend-item"><div class="swatch" style="background:#9f1239"></div>15 — Град сильный</div>
-    <div class="legend-item"><div class="swatch" style="background:#e879f9"></div>16 — Шквал слабый</div>
-    <div class="legend-item"><div class="swatch" style="background:#d946ef"></div>17 — Шквал умеренный</div>
-    <div class="legend-item"><div class="swatch" style="background:#a21caf"></div>18 — Шквал сильный</div>
+  <!-- Панель dBZ -->
+  <div class="panel dbz-legend">
+    <h3>Интенсивность</h3>
+    <div class="dbz-item"><div class="dbz-color" style="background:#22c55e"></div>5–15 dBZ</div>
+    <div class="dbz-item"><div class="dbz-color" style="background:#3b82f6"></div>15–30 dBZ</div>
+    <div class="dbz-item"><div class="dbz-color" style="background:#eab308"></div>30–40 dBZ</div>
+    <div class="dbz-item"><div class="dbz-color" style="background:#f97316"></div>40–50 dBZ</div>
+    <div class="dbz-item"><div class="dbz-color" style="background:#ef4444"></div>50+ dBZ</div>
   </div>
 </div>
 
@@ -199,10 +185,9 @@
 
   let map, frames = [], satFrames = [];
   let cur = 0;
-  let radarLayer = null, satLayer = null;
-  let showRadar = true, showSat = false, showArrows = false;
-  let scheme = 7; // Rainbow по умолчанию — лучше соответствует легенде
-  let playing = false, timer = null;
+  let radarLayer = null, satLayer = null, alertsLayer = null;
+  let showRadar = true, showSat = false, showAlerts = false, showArrows = true;
+  let scheme = 2, playing = false, timer = null;
 
   function init() {
     map = L.map('map', { zoomControl: false }).setView([55.75, 37.62], 6);
@@ -231,6 +216,7 @@
       slider.value = cur;
 
       updateLayers();
+      if (showAlerts) loadAlerts();
     } catch (e) {
       console.error(e);
     }
@@ -239,7 +225,11 @@
   function updateLayers() {
     if (!frames.length) return;
 
-    if (radarLayer) { map.removeLayer(radarLayer); radarLayer = null; }
+    // Радар
+    if (radarLayer) {
+      map.removeLayer(radarLayer);
+      radarLayer = null;
+    }
     if (showRadar) {
       const f = frames[cur];
       let url = `${API}/v2/radar/${f.time}/256/{z}/{x}/{y}/${scheme}/1_1.png`;
@@ -250,14 +240,21 @@
       }).addTo(map);
     }
 
-    if (satLayer) { map.removeLayer(satLayer); satLayer = null; }
+    // Спутник
+    if (satLayer) {
+      map.removeLayer(satLayer);
+      satLayer = null;
+    }
     if (showSat && satFrames.length) {
       const target = frames[cur].time;
       let best = satFrames[0];
       let bestDiff = Math.abs(best.time - target);
       for (const s of satFrames) {
         const d = Math.abs(s.time - target);
-        if (d < bestDiff) { bestDiff = d; best = s; }
+        if (d < bestDiff) {
+          bestDiff = d;
+          best = s;
+        }
       }
       satLayer = L.tileLayer(
         `${API}/v2/satellite/${best.time}/256/{z}/{x}/{y}/0/0_0.png`,
@@ -265,6 +262,7 @@
       ).addTo(map);
     }
 
+    // UI
     document.getElementById('slider').value = cur;
     document.getElementById('frame').textContent = `кадр ${cur + 1} / ${frames.length}`;
     const d = new Date(frames[cur].time * 1000);
@@ -273,21 +271,46 @@
     });
   }
 
-  document.getElementById('prev').onclick = () => { cur = Math.max(0, cur - 1); updateLayers(); };
-  document.getElementById('next').onclick = () => { cur = Math.min(frames.length - 1, cur + 1); updateLayers(); };
-  document.getElementById('slider').oninput = e => { cur = +e.target.value; updateLayers(); };
+  async function loadAlerts() {
+    if (alertsLayer) {
+      map.removeLayer(alertsLayer);
+      alertsLayer = null;
+    }
+    if (!showAlerts) return;
 
-  document.getElementById('play').onclick = function () {
-    playing = !playing;
-    this.textContent = playing ? '⏸' : '▶';
-    if (playing) {
-      timer = setInterval(() => {
-        cur = (cur + 1) % frames.length;
-        updateLayers();
-      }, 700);
-    } else clearInterval(timer);
-  };
+    try {
+      const res = await fetch(API + '/v2/alerts?' + Date.now());
+      const geo = await res.json();
 
+      alertsLayer = L.geoJSON(geo, {
+        style: f => {
+          const s = (f.properties.severity || '').toLowerCase();
+          let c = '#ef4444';
+          if (s.includes('moderate') || s.includes('minor')) c = '#f59e0b';
+          if (s.includes('extreme')) c = '#dc2626';
+          return {
+            color: c,
+            weight: 2.5,
+            fillColor: c,
+            fillOpacity: 0.22,
+            opacity: 0.9
+          };
+        },
+        onEachFeature: (f, l) => {
+          const p = f.properties;
+          l.bindPopup(
+            `<b>${p.event || 'Опасное явление'}</b><br>` +
+            `${p.headline || ''}<br>` +
+            `<small style="color:#94a3b8">${p.severity || ''} · ${p.areaDesc || ''}</small>`
+          );
+        }
+      }).addTo(map);
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  // Кнопки слоёв
   document.getElementById('btnRadar').onclick = function () {
     showRadar = !showRadar;
     this.classList.toggle('active', showRadar);
@@ -298,13 +321,48 @@
     this.classList.toggle('active', showSat);
     updateLayers();
   };
+  document.getElementById('btnAlerts').onclick = function () {
+    showAlerts = !showAlerts;
+    this.classList.toggle('active', showAlerts);
+    loadAlerts();
+  };
   document.getElementById('btnArrows').onclick = function () {
     showArrows = !showArrows;
     this.classList.toggle('active', showArrows);
     updateLayers();
   };
 
-  document.getElementById('scheme').onchange = e => { scheme = +e.target.value; updateLayers(); };
+  // Управление временем
+  document.getElementById('prev').onclick = () => {
+    cur = Math.max(0, cur - 1);
+    updateLayers();
+  };
+  document.getElementById('next').onclick = () => {
+    cur = Math.min(frames.length - 1, cur + 1);
+    updateLayers();
+  };
+  document.getElementById('slider').oninput = e => {
+    cur = +e.target.value;
+    updateLayers();
+  };
+
+  document.getElementById('play').onclick = function () {
+    playing = !playing;
+    this.textContent = playing ? '⏸' : '▶';
+    if (playing) {
+      timer = setInterval(() => {
+        cur = (cur + 1) % frames.length;
+        updateLayers();
+      }, 700);
+    } else {
+      clearInterval(timer);
+    }
+  };
+
+  document.getElementById('scheme').onchange = e => {
+    scheme = +e.target.value;
+    updateLayers();
+  };
   document.getElementById('opacity').oninput = e => {
     document.getElementById('opVal').textContent = e.target.value + '%';
     if (radarLayer) radarLayer.setOpacity(e.target.value / 100);
