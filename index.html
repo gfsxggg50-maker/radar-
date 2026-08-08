@@ -23,96 +23,145 @@
             margin-bottom: 12px;
             text-shadow: 0 0 20px rgba(126, 200, 240, 0.2);
         }
-        .map-wrapper {
-            position: relative;
+
+        /* ===== ОСНОВНОЙ БЛОК ===== */
+        .main-wrap {
+            display: flex;
+            gap: 16px;
             width: 100%;
             max-width: 1200px;
+            align-items: flex-start;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        /* ===== СЕТКА 4x4 ===== */
+        .grid-wrap {
+            flex: 1;
+            min-width: 300px;
+            max-width: 900px;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 6px;
+            background: #0d2137;
+            padding: 8px;
             border-radius: 16px;
-            overflow: hidden;
             border: 2px solid #1e3a55;
             box-shadow: 0 8px 40px rgba(0, 0, 0, 0.7);
-            background: #0d2137;
         }
-        .map-wrapper iframe {
+        .cell {
+            position: relative;
+            background: #122b44;
+            border-radius: 10px;
+            overflow: hidden;
+            aspect-ratio: 1 / 1;
+            border: 2px solid #1e3a55;
+            transition: transform 0.2s, border-color 0.2s;
+        }
+        .cell:hover {
+            transform: scale(1.04);
+            border-color: #4a9eff;
+            z-index: 2;
+        }
+        .cell img {
             width: 100%;
-            height: 70vh;
-            min-height: 500px;
-            border: none;
+            height: 100%;
+            object-fit: cover;
             display: block;
+        }
+        .cell-label {
+            position: absolute;
+            bottom: 4px;
+            left: 4px;
+            background: rgba(0, 0, 0, 0.8);
+            color: #b0d4f0;
+            font-size: 8px;
+            padding: 2px 8px;
+            border-radius: 10px;
+            backdrop-filter: blur(4px);
+            border: 1px solid rgba(255,255,255,0.06);
+            font-weight: 600;
+            pointer-events: none;
+        }
+        .danger-badge {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 7px;
+            font-weight: bold;
+            pointer-events: none;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            animation: pulse 1.5s infinite;
+        }
+        .danger-badge.none {
+            background: rgba(0, 200, 100, 0.7);
+            color: #fff;
+            animation: none;
+        }
+        .danger-badge.warning {
+            background: rgba(255, 200, 0, 0.85);
+            color: #000;
+        }
+        .danger-badge.danger {
+            background: rgba(255, 50, 0, 0.9);
+            color: #fff;
+        }
+        .danger-badge.storm {
+            background: rgba(200, 0, 255, 0.9);
+            color: #fff;
+        }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
         }
 
         /* ===== КОМПАКТНАЯ ЛЕГЕНДА ===== */
-        .legend-toggle {
-            position: absolute;
-            top: 16px;
-            right: 16px;
-            z-index: 100;
-            background: rgba(13, 33, 55, 0.92);
-            backdrop-filter: blur(8px);
-            border: 1px solid #1e3a55;
-            border-radius: 12px;
-            padding: 10px 12px;
-            min-width: 140px;
-            box-shadow: 0 4px 24px rgba(0,0,0,0.6);
-            transition: all 0.3s ease;
-            cursor: pointer;
-            user-select: none;
+        .legend {
+            background: #0d2137;
+            border: 2px solid #1e3a55;
+            border-radius: 16px;
+            padding: 12px 14px;
+            min-width: 160px;
+            max-width: 220px;
+            box-shadow: 0 8px 40px rgba(0, 0, 0, 0.5);
+            align-self: flex-start;
+            flex-shrink: 0;
         }
-        .legend-toggle:hover {
-            border-color: #4a9eff;
-        }
-        .legend-toggle .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+        .legend h3 {
             color: #7ec8f0;
-            font-size: 11px;
-            font-weight: 600;
-            letter-spacing: 0.5px;
-        }
-        .legend-toggle .header .arrow {
-            transition: transform 0.3s;
-            font-size: 10px;
-            color: #4a7090;
-        }
-        .legend-toggle .header .arrow.open {
-            transform: rotate(180deg);
-        }
-        .legend-items {
-            max-height: 0;
-            overflow: hidden;
-            transition: max-height 0.3s ease, opacity 0.3s ease;
-            opacity: 0;
-            margin-top: 0;
-        }
-        .legend-toggle.open .legend-items {
-            max-height: 500px;
-            opacity: 1;
-            margin-top: 8px;
+            font-weight: 300;
+            font-size: 12px;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+            border-bottom: 1px solid #1a2a3f;
+            padding-bottom: 6px;
+            text-align: center;
         }
         .legend-item {
             display: flex;
             align-items: center;
-            gap: 8px;
-            padding: 3px 0;
-            font-size: 10px;
+            gap: 6px;
+            padding: 2px 0;
+            font-size: 9px;
             color: #b0c8e0;
-            border-bottom: 1px solid rgba(255,255,255,0.04);
-        }
-        .legend-item:last-child {
-            border-bottom: none;
+            border-bottom: 1px solid rgba(255,255,255,0.03);
         }
         .legend-item .color-box {
-            width: 16px;
-            height: 10px;
+            width: 14px;
+            height: 8px;
             border-radius: 3px;
             flex-shrink: 0;
-            border: 1px solid rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.06);
         }
         .legend-item .num {
             color: #4a7090;
-            font-size: 8px;
-            width: 16px;
+            font-size: 7px;
+            width: 14px;
             text-align: right;
             font-weight: bold;
         }
@@ -122,14 +171,14 @@
         }
         .legend-danger {
             display: flex;
-            gap: 6px;
+            gap: 4px;
             flex-wrap: wrap;
             justify-content: center;
             padding-top: 4px;
         }
         .legend-danger span {
-            font-size: 8px;
-            padding: 2px 8px;
+            font-size: 7px;
+            padding: 2px 6px;
             border-radius: 8px;
             font-weight: bold;
         }
@@ -146,23 +195,13 @@
             opacity: 0.6;
         }
 
-        @media (max-width: 768px) {
+        @media (max-width: 700px) {
+            .main-wrap { flex-direction: column; align-items: center; }
+            .legend { max-width: 100%; width: 100%; }
+            .grid { gap: 4px; padding: 6px; }
             h1 { font-size: 18px; }
-            .map-wrapper iframe { height: 55vh; min-height: 350px; }
-            .legend-toggle {
-                top: 10px;
-                right: 10px;
-                padding: 8px 10px;
-                min-width: 100px;
-            }
-            .legend-toggle .header { font-size: 10px; }
-            .legend-item { font-size: 9px; }
-        }
-        @media (max-width: 480px) {
-            .legend-toggle { min-width: 80px; padding: 6px 8px; }
-            .legend-item { font-size: 8px; gap: 4px; }
-            .legend-item .color-box { width: 12px; height: 8px; }
-            .legend-item .num { width: 12px; }
+            .cell-label { font-size: 7px; }
+            .danger-badge { font-size: 6px; padding: 1px 6px; }
         }
     </style>
 </head>
@@ -170,118 +209,23 @@
 
     <h1>📡 RADAR TIMUR KONOPLEV</h1>
 
-    <div class="map-wrapper">
-        <!-- Карта от Windy (вся Россия) -->
-        <iframe 
-            src="https://embed.windy.com/embed2.html?lat=55.0&lon=70.0&zoom=4&level=surface&overlay=rain&menu=&message=false&marker=&calendar=&pressure=&type=map&location=coordinates&detail=&detailLat=55.0&detailLon=70.0&metricWind=default&metricTemp=default&radarRange=-1"
-            allowfullscreen>
-        </iframe>
+    <div class="main-wrap">
+
+        <!-- СЕТКА 4x4 -->
+        <div class="grid-wrap">
+            <div class="grid" id="radarGrid"></div>
+        </div>
 
         <!-- ЛЕГЕНДА -->
-        <div class="legend-toggle" id="legendToggle">
-            <div class="header">
-                <span>📋 Легенда</span>
-                <span class="arrow" id="legendArrow">▼</span>
-            </div>
-            <div class="legend-items" id="legendItems">
-                <div class="legend-item">
-                    <span class="num">1</span>
-                    <span class="color-box" style="background:#6a8aa0;"></span>
-                    <span>Обл. в сред. ярусе</span>
-                </div>
-                <div class="legend-item">
-                    <span class="num">2</span>
-                    <span class="color-box" style="background:#8a9aae;"></span>
-                    <span>Слоист. облачность</span>
-                </div>
-                <div class="legend-item">
-                    <span class="num">3</span>
-                    <span class="color-box" style="background:#4a8ac0;"></span>
-                    <span>Осадки слабые</span>
-                </div>
-                <div class="legend-item">
-                    <span class="num">4</span>
-                    <span class="color-box" style="background:#2a6aaa;"></span>
-                    <span>Осадки умеренные</span>
-                </div>
-                <div class="legend-item">
-                    <span class="num">5</span>
-                    <span class="color-box" style="background:#1a4a8a;"></span>
-                    <span>Осадки сильные</span>
-                </div>
-                <div class="legend-item">
-                    <span class="num">6</span>
-                    <span class="color-box" style="background:#c0c0d0;"></span>
-                    <span>Кучевая облачность</span>
-                </div>
-                <div class="legend-item">
-                    <span class="num">7</span>
-                    <span class="color-box" style="background:#3a8ac0;"></span>
-                    <span>Ливень слабый</span>
-                </div>
-                <div class="legend-item">
-                    <span class="num">8</span>
-                    <span class="color-box" style="background:#1a7aaa;"></span>
-                    <span>Ливень умеренный</span>
-                </div>
-                <div class="legend-item">
-                    <span class="num">9</span>
-                    <span class="color-box" style="background:#0a5a8a;"></span>
-                    <span>Ливень сильный</span>
-                </div>
-                <div class="legend-item">
-                    <span class="num">10</span>
-                    <span class="color-box" style="background:#ff4400;"></span>
-                    <span>Гроза (R)</span>
-                </div>
-                <div class="legend-item">
-                    <span class="num">11</span>
-                    <span class="color-box" style="background:#ff2200;"></span>
-                    <span>Гроза R</span>
-                </div>
-                <div class="legend-item">
-                    <span class="num">12</span>
-                    <span class="color-box" style="background:#ff0000;"></span>
-                    <span>Гроза R</span>
-                </div>
-                <div class="legend-item">
-                    <span class="num">13</span>
-                    <span class="color-box" style="background:#aa88ff;"></span>
-                    <span>Град слабый</span>
-                </div>
-                <div class="legend-item">
-                    <span class="num">14</span>
-                    <span class="color-box" style="background:#8866ff;"></span>
-                    <span>Град умеренный</span>
-                </div>
-                <div class="legend-item">
-                    <span class="num">15</span>
-                    <span class="color-box" style="background:#6644ff;"></span>
-                    <span>Град сильный</span>
-                </div>
-                <div class="legend-item">
-                    <span class="num">16</span>
-                    <span class="color-box" style="background:#ff66aa;"></span>
-                    <span>Шквал слабый</span>
-                </div>
-                <div class="legend-item">
-                    <span class="num">17</span>
-                    <span class="color-box" style="background:#ff44aa;"></span>
-                    <span>Шквал умеренный</span>
-                </div>
-                <div class="legend-item">
-                    <span class="num">18</span>
-                    <span class="color-box" style="background:#ff2288;"></span>
-                    <span>Шквал сильный</span>
-                </div>
-
-                <div class="legend-divider"></div>
-                <div class="legend-danger">
-                    <span class="badge-safe">● Безопасно</span>
-                    <span class="badge-warning">⚠️ Осадки</span>
-                    <span class="badge-danger">🔴 Гроза</span>
-                    <span class="badge-storm">⚡ Шквал/Град</span>
-                </div>
+        <div class="legend">
+            <h3>📋 ЛЕГЕНДА</h3>
+            <div id="legendList"></div>
+            <div class="legend-divider"></div>
+            <div class="legend-danger">
+                <span class="badge-safe">● Безопасно</span>
+                <span class="badge-warning">⚠️ Осадки</span>
+                <span class="badge-danger">🔴 Гроза</span>
+                <span class="badge-storm">⚡ Шквал/Град</span>
             </div>
         </div>
     </div>
@@ -292,20 +236,168 @@
 
     <script>
         // ================================================================
-        // СВОРАЧИВАНИЕ ЛЕГЕНДЫ
+        // API КЛЮЧИ
         // ================================================================
-        const toggle = document.getElementById('legendToggle');
-        const arrow = document.getElementById('legendArrow');
-
-        toggle.addEventListener('click', () => {
-            toggle.classList.toggle('open');
-            arrow.classList.toggle('open');
-        });
+        const API_KEY_RADAR = 'a284a8b35f0cc8966d4b440e20be8202';
 
         // ================================================================
-        // ВРЕМЯ ОБНОВЛЕНИЯ
+        // КООРДИНАТЫ КАРЕЛИИ (4x4)
         // ================================================================
-        document.getElementById('updateTime').textContent = new Date().toLocaleTimeString('ru-RU');
+        const locations = [
+            { lat: 65.0, lon: 30.5, name: 'Сев-Зап' },
+            { lat: 65.0, lon: 32.0, name: 'Сев-Центр' },
+            { lat: 65.0, lon: 33.5, name: 'Сев-Вост' },
+            { lat: 65.0, lon: 35.0, name: 'Сев-Крайн' },
+            { lat: 64.0, lon: 30.5, name: 'Запад' },
+            { lat: 64.0, lon: 32.0, name: 'Центр' },
+            { lat: 64.0, lon: 33.5, name: 'Восток' },
+            { lat: 64.0, lon: 35.0, name: 'Крайн' },
+            { lat: 63.0, lon: 30.5, name: 'Юг-Зап' },
+            { lat: 63.0, lon: 32.0, name: 'Юг-Центр' },
+            { lat: 63.0, lon: 33.5, name: 'Юг-Вост' },
+            { lat: 63.0, lon: 35.0, name: 'Южн-Крайн' },
+            { lat: 61.5, lon: 30.5, name: 'Южн-Зап' },
+            { lat: 61.5, lon: 32.0, name: 'Южн-Центр' },
+            { lat: 61.5, lon: 33.5, name: 'Южн-Вост' },
+            { lat: 61.5, lon: 35.0, name: 'Южн-Крайн' }
+        ];
+
+        // ================================================================
+        // ЛЕГЕНДА (18 явлений из вашего файла)
+        // ================================================================
+        const legendData = [
+            { num: 1,  name: 'Обл. сред. ярус', color: '#6a8aa0' },
+            { num: 2,  name: 'Слоист. облачн.', color: '#8a9aae' },
+            { num: 3,  name: 'Осадки слабые', color: '#4a8ac0' },
+            { num: 4,  name: 'Осадки умерен.', color: '#2a6aaa' },
+            { num: 5,  name: 'Осадки сильные', color: '#1a4a8a' },
+            { num: 6,  name: 'Кучевая обл.', color: '#c0c0d0' },
+            { num: 7,  name: 'Ливень слабый', color: '#3a8ac0' },
+            { num: 8,  name: 'Ливень умерен.', color: '#1a7aaa' },
+            { num: 9,  name: 'Ливень сильный', color: '#0a5a8a' },
+            { num: 10, name: 'Гроза (R)', color: '#ff4400' },
+            { num: 11, name: 'Гроза R', color: '#ff2200' },
+            { num: 12, name: 'Гроза R', color: '#ff0000' },
+            { num: 13, name: 'Град слабый', color: '#aa88ff' },
+            { num: 14, name: 'Град умерен.', color: '#8866ff' },
+            { num: 15, name: 'Град сильный', color: '#6644ff' },
+            { num: 16, name: 'Шквал слабый', color: '#ff66aa' },
+            { num: 17, name: 'Шквал умерен.', color: '#ff44aa' },
+            { num: 18, name: 'Шквал сильный', color: '#ff2288' }
+        ];
+
+        // ================================================================
+        // ОТРИСОВКА ЛЕГЕНДЫ
+        // ================================================================
+        function renderLegend() {
+            const container = document.getElementById('legendList');
+            container.innerHTML = '';
+            legendData.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'legend-item';
+                div.innerHTML = `
+                    <span class="num">${item.num}</span>
+                    <span class="color-box" style="background:${item.color};"></span>
+                    <span>${item.name}</span>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        // ================================================================
+        // РАСЧЁТ ТАЙЛОВ
+        // ================================================================
+        function getTileX(lon, zoom) {
+            return Math.floor((lon + 180) / 360 * Math.pow(2, zoom));
+        }
+        function getTileY(lat, zoom) {
+            const latRad = lat * Math.PI / 180;
+            return Math.floor((1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2 * Math.pow(2, zoom));
+        }
+
+        // ================================================================
+        // ОПРЕДЕЛЕНИЕ УРОВНЯ ОПАСНОСТИ (имитация)
+        // ================================================================
+        function getDangerLevel(lat, lon) {
+            const seed = (Math.floor(lat * 10) + Math.floor(lon * 5)) % 100;
+            if (seed < 20) return 'none';
+            if (seed < 50) return 'warning';
+            if (seed < 80) return 'danger';
+            return 'storm';
+        }
+
+        function getDangerText(level) {
+            const map = {
+                'none': '✅ Безопасно',
+                'warning': '⚠️ Осадки',
+                'danger': '🔴 Гроза!',
+                'storm': '⚡ Шквал/Град!'
+            };
+            return map[level] || '✅ Безопасно';
+        }
+
+        function getDangerClass(level) {
+            return level;
+        }
+
+        // ================================================================
+        // ГЕНЕРАЦИЯ СЕТКИ 4x4
+        // ================================================================
+        function renderGrid() {
+            const grid = document.getElementById('radarGrid');
+            grid.innerHTML = '';
+            const zoom = 7;
+
+            locations.forEach((loc) => {
+                const cell = document.createElement('div');
+                cell.className = 'cell';
+
+                const tileX = getTileX(loc.lon, zoom);
+                const tileY = getTileY(loc.lat, zoom);
+                const radarUrl = `https://tile.openweathermap.org/map/precipitation_new/${zoom}/${tileX}/${tileY}.png?appid=${API_KEY_RADAR}`;
+
+                // Картинка радара
+                const img = document.createElement('img');
+                img.src = radarUrl;
+                img.alt = 'радар';
+                img.onerror = () => {
+                    img.style.display = 'none';
+                    const error = document.createElement('div');
+                    error.style.cssText = 'color:#4a7090;font-size:12px;text-align:center;padding:20px;';
+                    error.textContent = '⛅ Нет данных';
+                    cell.appendChild(error);
+                };
+                cell.appendChild(img);
+
+                // Название
+                const label = document.createElement('div');
+                label.className = 'cell-label';
+                label.textContent = loc.name;
+                cell.appendChild(label);
+
+                // Бейдж опасности
+                const level = getDangerLevel(loc.lat, loc.lon);
+                const badge = document.createElement('div');
+                badge.className = `danger-badge ${getDangerClass(level)}`;
+                badge.textContent = getDangerText(level);
+                cell.appendChild(badge);
+
+                grid.appendChild(cell);
+            });
+
+            document.getElementById('updateTime').textContent = new Date().toLocaleTimeString('ru-RU');
+        }
+
+        // ================================================================
+        // ЗАПУСК
+        // ================================================================
+        renderLegend();
+        renderGrid();
+
+        // Автообновление каждые 5 минут
+        setInterval(() => {
+            location.reload();
+        }, 300000);
     </script>
 
 </body>
