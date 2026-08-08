@@ -3,233 +3,402 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Радарная карта</title>
+  <title>Timur Radar</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <style>
     :root {
-      --bg: #0b0f14;
-      --panel: rgba(15, 20, 28, 0.94);
-      --border: #2a3340;
-      --text: #e6edf3;
-      --blue: #3b82f6;
+      --bg: #070b10;
+      --panel: rgba(10, 14, 20, 0.96);
+      --border: #1e293b;
+      --text: #e2e8f0;
+      --accent: #3b82f6;
       --green: #22c55e;
       --orange: #f59e0b;
       --red: #ef4444;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; overflow: hidden; }
-    #map { width: 100vw; height: 100vh; }
+    body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; overflow: hidden; height: 100vh; }
+
+    /* LOGIN */
+    #login {
+      position: fixed; inset: 0; z-index: 99999;
+      background: #070b10;
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px;
+    }
+    #login h1 { font-size: 22px; font-weight: 600; letter-spacing: 2px; }
+    #login input {
+      background: #1e293b; border: 1px solid #334155; color: white;
+      padding: 13px 18px; border-radius: 10px; font-size: 16px; width: 260px; outline: none;
+    }
+    #login input:focus { border-color: var(--accent); }
+    #login button {
+      background: var(--accent); border: none; color: white;
+      padding: 12px 36px; border-radius: 10px; font-size: 15px; cursor: pointer; font-weight: 500;
+    }
+    #login.wrong input { border-color: var(--red); }
+
+    #app { display: none; width: 100%; height: 100%; }
+    #map { width: 100%; height: 100%; }
 
     .panel {
       position: absolute; z-index: 1000;
-      background: var(--panel); backdrop-filter: blur(16px);
+      background: var(--panel); backdrop-filter: blur(20px);
       border: 1px solid var(--border); border-radius: 14px;
-      padding: 14px 16px; box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+      padding: 14px 16px; box-shadow: 0 15px 50px rgba(0,0,0,0.6);
     }
     .top-left { top: 16px; left: 16px; width: 300px; }
     .bottom {
       bottom: 18px; left: 50%; transform: translateX(-50%);
       display: flex; align-items: center; gap: 12px;
-      padding: 10px 18px; min-width: 560px;
+      padding: 11px 20px; min-width: 600px;
     }
 
-    h3 { font-size: 12px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 12px; }
-    .row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
-    label { font-size: 13px; display: flex; align-items: center; gap: 6px; }
+    h3 { font-size: 11px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 11px; }
+    .row { display: flex; gap: 7px; flex-wrap: wrap; margin-bottom: 9px; }
+    label { font-size: 13px; }
 
     button {
       background: #1e293b; border: 1px solid var(--border); color: var(--text);
-      padding: 7px 13px; border-radius: 9px; cursor: pointer; font-size: 13px;
-      transition: all 0.15s;
+      padding: 7px 13px; border-radius: 9px; cursor: pointer; font-size: 13px; transition: 0.15s;
     }
     button:hover { background: #334155; }
-    button.active { background: var(--blue); border-color: var(--blue); }
+    button.active { background: var(--accent); border-color: var(--accent); }
 
-    select, input[type=range] { width: 100%; }
     select {
-      background: #1e293b; border: 1px solid var(--border); color: var(--text);
+      width: 100%; background: #1e293b; border: 1px solid var(--border); color: var(--text);
       padding: 7px 10px; border-radius: 8px; font-size: 13px;
     }
-    input[type=range] { accent-color: var(--blue); }
+    input[type=range] { width: 100%; accent-color: var(--accent); }
 
     #time { font-variant-numeric: tabular-nums; font-size: 15px; min-width: 145px; text-align: center; font-weight: 500; }
     #frame { font-size: 12px; color: #94a3b8; text-align: center; margin-top: 3px; }
-    .slider-wrap { flex: 1; min-width: 200px; }
+    .slider-wrap { flex: 1; min-width: 220px; }
+
+    .status {
+      position: absolute; top: 16px; right: 16px; z-index: 1000;
+      background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+      padding: 8px 14px; font-size: 12px; color: #94a3b8;
+    }
   </style>
 </head>
 <body>
-  <div id="map"></div>
 
-  <div class="panel top-left">
-    <h3>Слои</h3>
-    <div class="row">
-      <button id="btnRadar" class="active">Радар</button>
-      <button id="btnSat">Спутник</button>
-      <button id="btnBoth">Оба</button>
-    </div>
-    <div class="row">
-      <button id="btnAlerts">ОЯ</button>
-      <button id="btnCells">Ячейки</button>
-    </div>
-
-    <h3 style="margin-top:14px">Цвет радара</h3>
-    <select id="scheme">
-      <option value="2">Universal Blue</option>
-      <option value="7">Rainbow</option>
-      <option value="4">TWC</option>
-      <option value="6">NEXRAD</option>
-      <option value="3">TITAN</option>
-      <option value="8">Dark Sky</option>
-      <option value="0">Ч/Б</option>
-      <option value="1">Original</option>
-    </select>
-
-    <div class="row" style="margin-top:12px">
-      <label>Прозрачность <span id="opVal">70%</span></label>
-    </div>
-    <input type="range" id="opacity" min="20" max="100" value="70">
-
-    <div class="row" style="margin-top:14px">
-      <button id="locate" style="width:100%">📍 Моё место</button>
-    </div>
+  <div id="login">
+    <h1>TIMUR RADAR</h1>
+    <input type="password" id="pass" placeholder="Пароль" autofocus>
+    <button id="btnLogin">Войти</button>
   </div>
 
-  <div class="panel bottom">
-    <button id="prev">◀</button>
-    <button id="play">▶</button>
-    <button id="next">▶</button>
+  <div id="app">
+    <div id="map"></div>
 
-    <div class="slider-wrap">
-      <input type="range" id="slider" min="0" max="0" value="0">
-      <div id="frame">кадр 0 / 0</div>
+    <div class="panel top-left">
+      <h3>Слои</h3>
+      <div class="row">
+        <button id="btnRadar" class="active">Радар</button>
+        <button id="btnSat">Спутник</button>
+        <button id="btnBoth">Оба</button>
+      </div>
+      <div class="row">
+        <button id="btnAlerts">ОЯ</button>
+        <button id="btnCells">Ячейки</button>
+        <button id="btnArrows">Движение</button>
+      </div>
+
+      <h3 style="margin-top:14px">Цвет радара</h3>
+      <select id="scheme">
+        <option value="2">Universal Blue</option>
+        <option value="7">Rainbow</option>
+        <option value="4">The Weather Channel</option>
+        <option value="6">NEXRAD</option>
+        <option value="3">TITAN</option>
+        <option value="8">Dark Sky</option>
+        <option value="0">Чёрно-белый</option>
+        <option value="1">Original</option>
+      </select>
+
+      <div class="row" style="margin-top:12px">
+        <label>Прозрачность <span id="opVal">70%</span></label>
+      </div>
+      <input type="range" id="opacity" min="20" max="100" value="70">
+
+      <div class="row" style="margin-top:14px">
+        <button id="locate" style="width:100%">📍 Моё местоположение</button>
+      </div>
     </div>
 
-    <div id="time">--:--</div>
+    <div class="panel bottom">
+      <button id="prev">◀</button>
+      <button id="play">▶</button>
+      <button id="next">▶</button>
+
+      <div class="slider-wrap">
+        <input type="range" id="slider" min="0" max="0" value="0">
+        <div id="frame">кадр 0 / 0</div>
+      </div>
+
+      <div id="time">--:--</div>
+    </div>
+
+    <div class="status" id="status">Загрузка...</div>
   </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
+    // ===================== ПАРОЛЬ =====================
+    const PASS = 'timurradar';
+
+    document.getElementById('btnLogin').onclick = checkPass;
+    document.getElementById('pass').addEventListener('keydown', e => {
+      if (e.key === 'Enter') checkPass();
+    });
+
+    function checkPass() {
+      const val = document.getElementById('pass').value;
+      if (val === PASS) {
+        document.getElementById('login').style.display = 'none';
+        document.getElementById('app').style.display = 'block';
+        startApp();
+      } else {
+        document.getElementById('login').classList.add('wrong');
+        document.getElementById('pass').value = '';
+        document.getElementById('pass').placeholder = 'Неверный пароль';
+      }
+    }
+
+    // ===================== ПРИЛОЖЕНИЕ =====================
     const API = 'https://api.librewxr.net';
 
-    const map = L.map('map', { zoomControl: false }).setView([55.75, 37.62], 6);
-    L.control.zoom({ position: 'bottomright' }).addTo(map);
-
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-      maxZoom: 18,
-      attribution: '© OSM © CARTO | LibreWXR'
-    }).addTo(map);
-
-    let frames = [], satFrames = [];
+    let map;
+    let frames = [];
+    let satFrames = [];
     let cur = 0;
-    let radarL = null, satL = null, alertsL = null;
-    let mode = 'radar';
+    let radarLayer = null;
+    let satLayer = null;
+    let alertsLayer = null;
+    let mode = 'radar';          // radar | sat | both
     let scheme = 2;
     let showAlerts = false;
     let showCells = false;
+    let showArrows = false;
     let playing = false;
     let timer = null;
 
-    async function load() {
-      const r = await fetch(`${API}/public/weather-maps.json`);
-      const d = await r.json();
-      frames = [...(d.radar?.past || []), ...(d.radar?.nowcast || [])];
-      satFrames = d.satellite?.infrared || [];
-      document.getElementById('slider').max = Math.max(0, frames.length - 1);
-      document.getElementById('slider').value = frames.length - 1;
-      cur = frames.length - 1;
-      show(cur);
-      if (showAlerts) loadAlerts();
+    function startApp() {
+      map = L.map('map', { zoomControl: false }).setView([55.75, 37.62], 6);
+      L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        maxZoom: 18,
+        attribution: '© OpenStreetMap © CARTO | Данные: LibreWXR'
+      }).addTo(map);
+
+      loadData();
+      setInterval(loadData, 4 * 60 * 1000); // обновление каждые 4 минуты
     }
 
-    function show(i) {
-      if (!frames.length) return;
-      cur = Math.max(0, Math.min(i, frames.length - 1));
+    async function loadData() {
+      setStatus('Обновление данных...');
+      try {
+        const res = await fetch(API + '/public/weather-maps.json?_=' + Date.now());
+        const data = await res.json();
 
-      if (radarL) map.removeLayer(radarL);
+        frames = [...(data.radar?.past || []), ...(data.radar?.nowcast || [])];
+        satFrames = data.satellite?.infrared || [];
+
+        const slider = document.getElementById('slider');
+        slider.max = Math.max(0, frames.length - 1);
+
+        if (cur >= frames.length) cur = Math.max(0, frames.length - 1);
+        slider.value = cur;
+
+        showFrame(cur);
+        if (showAlerts) loadAlerts();
+
+        setStatus('Данные обновлены · ' + new Date().toLocaleTimeString('ru-RU'));
+      } catch (e) {
+        console.error(e);
+        setStatus('Ошибка загрузки данных');
+      }
+    }
+
+    function showFrame(idx) {
+      if (!frames.length) return;
+
+      cur = Math.max(0, Math.min(idx, frames.length - 1));
+
+      // === Радар ===
+      if (radarLayer) {
+        map.removeLayer(radarLayer);
+        radarLayer = null;
+      }
+
       if (mode === 'radar' || mode === 'both') {
         const f = frames[cur];
         let url = `${API}/v2/radar/${f.time}/256/{z}/{x}/{y}/${scheme}/1_1.png`;
-        if (showCells) url += '?cells=light';
-        radarL = L.tileLayer(url, {
+
+        const q = [];
+        if (showCells) q.push('cells=light');
+        if (showArrows) q.push('arrows=light');
+        if (q.length) url += '?' + q.join('&');
+
+        radarLayer = L.tileLayer(url, {
           opacity: document.getElementById('opacity').value / 100,
-          zIndex: 30
+          zIndex: 40
         }).addTo(map);
       }
 
-      if (satL) map.removeLayer(satL);
-      if ((mode === 'sat' || mode === 'both') && satFrames.length) {
-        const t = frames[cur]?.time || Date.now()/1000;
-        const best = satFrames.reduce((a,b) => Math.abs(b.time-t) < Math.abs(a.time-t) ? b : a);
-        satL = L.tileLayer(`${API}/v2/satellite/${best.time}/256/{z}/{x}/{y}/0/0_0.png`, {
-          opacity: 0.65, zIndex: 15
-        }).addTo(map);
+      // === Спутник ===
+      if (satLayer) {
+        map.removeLayer(satLayer);
+        satLayer = null;
       }
 
+      if ((mode === 'sat' || mode === 'both') && satFrames.length > 0) {
+        const targetTime = frames[cur] ? frames[cur].time : Math.floor(Date.now() / 1000);
+        let best = satFrames[0];
+        let minDiff = Infinity;
+
+        for (const s of satFrames) {
+          const diff = Math.abs(s.time - targetTime);
+          if (diff < minDiff) {
+            minDiff = diff;
+            best = s;
+          }
+        }
+
+        satLayer = L.tileLayer(
+          `${API}/v2/satellite/${best.time}/256/{z}/{x}/{y}/0/0_0.png`,
+          { opacity: 0.7, zIndex: 20 }
+        ).addTo(map);
+      }
+
+      // UI
       document.getElementById('slider').value = cur;
-      document.getElementById('frame').textContent = `кадр ${cur+1} / ${frames.length}`;
+      document.getElementById('frame').textContent = `кадр ${cur + 1} / ${frames.length}`;
+
       const d = new Date(frames[cur].time * 1000);
       document.getElementById('time').textContent = d.toLocaleString('ru-RU', {
-        day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'
+        day: '2-digit', month: '2-digit',
+        hour: '2-digit', minute: '2-digit'
       });
     }
 
     async function loadAlerts() {
-      if (alertsL) { map.removeLayer(alertsL); alertsL = null; }
+      if (alertsLayer) {
+        map.removeLayer(alertsLayer);
+        alertsLayer = null;
+      }
       if (!showAlerts) return;
+
       try {
-        const r = await fetch(`${API}/v2/alerts`);
-        const g = await r.json();
-        alertsL = L.geoJSON(g, {
-          style: f => {
-            const s = (f.properties.severity||'').toLowerCase();
-            let c = '#ef4444';
-            if (s.includes('moderate') || s.includes('minor')) c = '#f59e0b';
-            if (s.includes('extreme')) c = '#dc2626';
-            return { color: c, weight: 2, fillColor: c, fillOpacity: 0.22 };
+        const res = await fetch(API + '/v2/alerts?_=' + Date.now());
+        const geojson = await res.json();
+
+        alertsLayer = L.geoJSON(geojson, {
+          style: function(feature) {
+            const sev = (feature.properties.severity || '').toLowerCase();
+            let color = '#ef4444';
+            if (sev.includes('moderate') || sev.includes('minor')) color = '#f59e0b';
+            if (sev.includes('extreme')) color = '#dc2626';
+            return {
+              color: color,
+              weight: 2.5,
+              fillColor: color,
+              fillOpacity: 0.2,
+              opacity: 0.9
+            };
           },
-          onEachFeature: (f, l) => {
-            const p = f.properties;
-            l.bindPopup(`<b>${p.event||'ОЯ'}</b><br>${p.headline||''}<br><small>${p.severity||''} · ${p.areaDesc||''}</small>`);
+          onEachFeature: function(feature, layer) {
+            const p = feature.properties;
+            layer.bindPopup(
+              `<b>${p.event || 'Опасное явление'}</b><br>` +
+              `${p.headline || ''}<br>` +
+              `<small style="color:#94a3b8">${p.severity || ''} · ${p.urgency || ''}<br>${p.areaDesc || ''}</small>`
+            );
           }
         }).addTo(map);
-      } catch(e) { console.error(e); }
+      } catch (e) {
+        console.error('Ошибка загрузки ОЯ', e);
+      }
     }
 
-    // кнопки
-    document.getElementById('prev').onclick = () => show(cur-1);
-    document.getElementById('next').onclick = () => show(cur+1);
+    function setStatus(text) {
+      document.getElementById('status').textContent = text;
+    }
+
+    // ===== Кнопки =====
+    document.getElementById('prev').onclick = () => showFrame(cur - 1);
+    document.getElementById('next').onclick = () => showFrame(cur + 1);
+
     document.getElementById('play').onclick = function() {
       playing = !playing;
       this.textContent = playing ? '⏸' : '▶';
-      if (playing) timer = setInterval(() => show(cur+1 >= frames.length ? 0 : cur+1), 700);
-      else clearInterval(timer);
+      if (playing) {
+        timer = setInterval(() => {
+          let next = cur + 1;
+          if (next >= frames.length) next = 0;
+          showFrame(next);
+        }, 700);
+      } else {
+        clearInterval(timer);
+      }
     };
-    document.getElementById('slider').oninput = e => show(+e.target.value);
+
+    document.getElementById('slider').oninput = function() {
+      showFrame(+this.value);
+    };
 
     document.getElementById('btnRadar').onclick = function() {
-      mode='radar'; document.querySelectorAll('.top-left button').forEach(b=>b.classList.remove('active')); this.classList.add('active'); show(cur);
+      mode = 'radar';
+      setActive(this);
+      showFrame(cur);
     };
     document.getElementById('btnSat').onclick = function() {
-      mode='sat'; document.querySelectorAll('.top-left button').forEach(b=>b.classList.remove('active')); this.classList.add('active'); show(cur);
+      mode = 'sat';
+      setActive(this);
+      showFrame(cur);
     };
     document.getElementById('btnBoth').onclick = function() {
-      mode='both'; document.querySelectorAll('.top-left button').forEach(b=>b.classList.remove('active')); this.classList.add('active'); show(cur);
+      mode = 'both';
+      setActive(this);
+      showFrame(cur);
     };
+
+    function setActive(btn) {
+      document.querySelectorAll('.top-left button').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    }
+
     document.getElementById('btnAlerts').onclick = function() {
-      showAlerts = !showAlerts; this.classList.toggle('active', showAlerts); loadAlerts();
+      showAlerts = !showAlerts;
+      this.classList.toggle('active', showAlerts);
+      loadAlerts();
     };
     document.getElementById('btnCells').onclick = function() {
-      showCells = !showCells; this.classList.toggle('active', showCells); show(cur);
+      showCells = !showCells;
+      this.classList.toggle('active', showCells);
+      showFrame(cur);
     };
-    document.getElementById('scheme').onchange = e => { scheme = +e.target.value; show(cur); };
-    document.getElementById('opacity').oninput = e => {
-      document.getElementById('opVal').textContent = e.target.value + '%';
-      if (radarL) radarL.setOpacity(e.target.value/100);
+    document.getElementById('btnArrows').onclick = function() {
+      showArrows = !showArrows;
+      this.classList.toggle('active', showArrows);
+      showFrame(cur);
     };
-    document.getElementById('locate').onclick = () => map.locate({setView:true, maxZoom:9});
 
-    load();
-    setInterval(load, 5*60*1000);
+    document.getElementById('scheme').onchange = function() {
+      scheme = +this.value;
+      showFrame(cur);
+    };
+
+    document.getElementById('opacity').oninput = function() {
+      document.getElementById('opVal').textContent = this.value + '%';
+      if (radarLayer) radarLayer.setOpacity(this.value / 100);
+    };
+
+    document.getElementById('locate').onclick = function() {
+      map.locate({ setView: true, maxZoom: 9 });
+    };
   </script>
 </body>
 </html>
