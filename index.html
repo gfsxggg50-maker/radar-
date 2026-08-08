@@ -7,340 +7,229 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <style>
     :root {
-      --bg: #0d1117;
-      --panel: rgba(22, 27, 34, 0.92);
-      --border: #30363d;
+      --bg: #0b0f14;
+      --panel: rgba(15, 20, 28, 0.94);
+      --border: #2a3340;
       --text: #e6edf3;
-      --accent: #238636;
-      --blue: #1f6feb;
-      --red: #da3633;
+      --blue: #3b82f6;
+      --green: #22c55e;
+      --orange: #f59e0b;
+      --red: #ef4444;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; overflow: hidden; }
-    #map { width: 100vw; height: 100vh; background: #0d1117; }
+    body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; overflow: hidden; }
+    #map { width: 100vw; height: 100vh; }
 
-    /* ===== Панели ===== */
     .panel {
       position: absolute; z-index: 1000;
-      background: var(--panel); backdrop-filter: blur(12px);
-      border: 1px solid var(--border); border-radius: 12px;
-      padding: 14px; box-shadow: 0 8px 32px rgba(0,0,0,0.45);
+      background: var(--panel); backdrop-filter: blur(16px);
+      border: 1px solid var(--border); border-radius: 14px;
+      padding: 14px 16px; box-shadow: 0 12px 40px rgba(0,0,0,0.5);
     }
-    .top-left { top: 14px; left: 14px; width: 340px; }
-    .bottom-center {
-      bottom: 20px; left: 50%; transform: translateX(-50%);
-      display: flex; align-items: center; gap: 10px;
-      padding: 10px 16px; min-width: 520px;
+    .top-left { top: 16px; left: 16px; width: 300px; }
+    .bottom {
+      bottom: 18px; left: 50%; transform: translateX(-50%);
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 18px; min-width: 560px;
     }
-    .right-panel { top: 14px; right: 14px; width: 260px; }
 
-    h3 { font-size: 14px; font-weight: 600; margin-bottom: 12px; color: #8b949e; text-transform: uppercase; letter-spacing: 0.5px; }
-    .row { display: flex; gap: 8px; align-items: center; margin-bottom: 10px; flex-wrap: wrap; }
-    label { font-size: 13px; display: flex; align-items: center; gap: 6px; cursor: pointer; user-select: none; }
+    h3 { font-size: 12px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 12px; }
+    .row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+    label { font-size: 13px; display: flex; align-items: center; gap: 6px; }
 
-    button, .btn {
-      background: #21262d; border: 1px solid var(--border); color: var(--text);
-      padding: 7px 12px; border-radius: 8px; cursor: pointer; font-size: 13px;
+    button {
+      background: #1e293b; border: 1px solid var(--border); color: var(--text);
+      padding: 7px 13px; border-radius: 9px; cursor: pointer; font-size: 13px;
       transition: all 0.15s;
     }
-    button:hover, .btn:hover { background: #30363d; border-color: #8b949e; }
+    button:hover { background: #334155; }
     button.active { background: var(--blue); border-color: var(--blue); }
-    button.danger { background: #21262d; }
-    button.danger:hover { background: var(--red); border-color: var(--red); }
 
-    input[type=range] { width: 100%; accent-color: var(--blue); }
+    select, input[type=range] { width: 100%; }
     select {
-      background: #21262d; border: 1px solid var(--border); color: var(--text);
-      padding: 6px 10px; border-radius: 8px; font-size: 13px; width: 100%;
+      background: #1e293b; border: 1px solid var(--border); color: var(--text);
+      padding: 7px 10px; border-radius: 8px; font-size: 13px;
     }
+    input[type=range] { accent-color: var(--blue); }
 
-    #time-display { font-variant-numeric: tabular-nums; font-size: 14px; min-width: 150px; text-align: center; }
-    #frame-info { font-size: 12px; color: #8b949e; text-align: center; margin-top: 4px; }
-
-    .slider-box { flex: 1; min-width: 180px; }
-    .tools { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-    .color-box { display: flex; gap: 6px; align-items: center; }
-    .color-box input[type=color] { width: 36px; height: 28px; border: none; background: none; cursor: pointer; }
-
-    .hidden { display: none !important; }
+    #time { font-variant-numeric: tabular-nums; font-size: 15px; min-width: 145px; text-align: center; font-weight: 500; }
+    #frame { font-size: 12px; color: #94a3b8; text-align: center; margin-top: 3px; }
+    .slider-wrap { flex: 1; min-width: 200px; }
   </style>
 </head>
 <body>
   <div id="map"></div>
 
-  <!-- Левая панель -->
   <div class="panel top-left">
-    <h3>Радарная карта</h3>
-
+    <h3>Слои</h3>
     <div class="row">
       <button id="btnRadar" class="active">Радар</button>
       <button id="btnSat">Спутник</button>
       <button id="btnBoth">Оба</button>
     </div>
-
     <div class="row">
-      <label>Цветовая схема</label>
+      <button id="btnAlerts">ОЯ</button>
+      <button id="btnCells">Ячейки</button>
     </div>
-    <select id="colorScheme">
+
+    <h3 style="margin-top:14px">Цвет радара</h3>
+    <select id="scheme">
       <option value="2">Universal Blue</option>
-      <option value="0">Black & White</option>
-      <option value="1">Original</option>
+      <option value="7">Rainbow</option>
+      <option value="4">TWC</option>
+      <option value="6">NEXRAD</option>
       <option value="3">TITAN</option>
-      <option value="4">The Weather Channel</option>
-      <option value="5">Meteored</option>
-      <option value="6">NEXRAD Level-III</option>
-      <option value="7">Rainbow @ SELEX</option>
       <option value="8">Dark Sky</option>
+      <option value="0">Ч/Б</option>
+      <option value="1">Original</option>
     </select>
 
     <div class="row" style="margin-top:12px">
-      <label>Прозрачность радара <span id="opVal">75%</span></label>
+      <label>Прозрачность <span id="opVal">70%</span></label>
     </div>
-    <input type="range" id="opacity" min="20" max="100" value="75">
+    <input type="range" id="opacity" min="20" max="100" value="70">
 
     <div class="row" style="margin-top:14px">
-      <button id="locate">📍 Моё местоположение</button>
+      <button id="locate" style="width:100%">📍 Моё место</button>
     </div>
   </div>
 
-  <!-- Правая панель — рисование -->
-  <div class="panel right-panel">
-    <h3>Рисование</h3>
-    <div class="tools">
-      <button id="toolPen" class="active">Карандаш</button>
-      <button id="toolEraser">Ластик</button>
-    </div>
-
-    <div class="row" style="margin-top:12px">
-      <label>Цвет и толщина</label>
-    </div>
-    <div class="color-box">
-      <input type="color" id="drawColor" value="#FF3B30">
-      <input type="range" id="drawWidth" min="1" max="20" value="4" style="flex:1">
-      <span id="widthVal">4 px</span>
-    </div>
-
-    <div class="row" style="margin-top:14px">
-      <button id="clearDraw" class="danger" style="width:100%">Очистить всё</button>
-    </div>
-  </div>
-
-  <!-- Нижняя панель управления временем -->
-  <div class="panel bottom-center">
+  <div class="panel bottom">
     <button id="prev">◀</button>
     <button id="play">▶</button>
     <button id="next">▶</button>
 
-    <div class="slider-box">
-      <input type="range" id="timeSlider" min="0" max="0" value="0">
-      <div id="frame-info">кадр 0 / 0</div>
+    <div class="slider-wrap">
+      <input type="range" id="slider" min="0" max="0" value="0">
+      <div id="frame">кадр 0 / 0</div>
     </div>
 
-    <div id="time-display">--:--</div>
+    <div id="time">--:--</div>
   </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
-    // ===================== НАСТРОЙКИ =====================
     const API = 'https://api.librewxr.net';
 
-    // ===================== КАРТА =====================
-    const map = L.map('map', {
-      zoomControl: false,
-      attributionControl: true
-    }).setView([55.75, 37.62], 6);
-
+    const map = L.map('map', { zoomControl: false }).setView([55.75, 37.62], 6);
     L.control.zoom({ position: 'bottomright' }).addTo(map);
 
     L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
       maxZoom: 18,
-      attribution: '© OpenStreetMap © CARTO | Данные: LibreWXR'
+      attribution: '© OSM © CARTO | LibreWXR'
     }).addTo(map);
 
-    // ===================== СОСТОЯНИЕ =====================
-    let radarFrames = [];
-    let satFrames = [];
-    let current = 0;
-    let radarLayer = null;
-    let satLayer = null;
+    let frames = [], satFrames = [];
+    let cur = 0;
+    let radarL = null, satL = null, alertsL = null;
+    let mode = 'radar';
+    let scheme = 2;
+    let showAlerts = false;
+    let showCells = false;
     let playing = false;
-    let playTimer = null;
-    let mode = 'radar'; // radar | sat | both
-    let colorScheme = 2;
+    let timer = null;
 
-    // ===================== РИСОВАНИЕ =====================
-    const drawCanvas = L.canvas({ padding: 0.5 });
-    let drawing = false;
-    let currentPath = null;
-    let drawTool = 'pen'; // pen | eraser
-    let paths = [];
-
-    const drawLayer = L.layerGroup().addTo(map);
-
-    map.on('mousedown', e => {
-      if (e.originalEvent.button !== 0) return;
-      drawing = true;
-      const latlng = e.latlng;
-      currentPath = L.polyline([latlng], {
-        color: drawTool === 'pen' ? document.getElementById('drawColor').value : '#00000000',
-        weight: +document.getElementById('drawWidth').value,
-        opacity: drawTool === 'pen' ? 1 : 0,
-        lineCap: 'round',
-        lineJoin: 'round'
-      }).addTo(drawLayer);
-      paths.push(currentPath);
-    });
-
-    map.on('mousemove', e => {
-      if (!drawing || !currentPath) return;
-      currentPath.addLatLng(e.latlng);
-    });
-
-    map.on('mouseup', () => { drawing = false; currentPath = null; });
-    map.on('mouseout', () => { drawing = false; currentPath = null; });
-
-    // ===================== ЗАГРУЗКА ДАННЫХ =====================
-    async function loadData() {
-      try {
-        const res = await fetch(`${API}/public/weather-maps.json`);
-        const data = await res.json();
-
-        radarFrames = [
-          ...(data.radar?.past || []),
-          ...(data.radar?.nowcast || [])
-        ];
-        satFrames = data.satellite?.infrared || [];
-
-        const slider = document.getElementById('timeSlider');
-        slider.max = Math.max(0, radarFrames.length - 1);
-        slider.value = radarFrames.length - 1;
-        current = radarFrames.length - 1;
-
-        showFrame(current);
-      } catch (err) {
-        console.error(err);
-        document.getElementById('time-display').textContent = 'Ошибка загрузки';
-      }
+    async function load() {
+      const r = await fetch(`${API}/public/weather-maps.json`);
+      const d = await r.json();
+      frames = [...(d.radar?.past || []), ...(d.radar?.nowcast || [])];
+      satFrames = d.satellite?.infrared || [];
+      document.getElementById('slider').max = Math.max(0, frames.length - 1);
+      document.getElementById('slider').value = frames.length - 1;
+      cur = frames.length - 1;
+      show(cur);
+      if (showAlerts) loadAlerts();
     }
 
-    // ===================== ПОКАЗ КАДРА =====================
-    function showFrame(idx) {
-      if (radarFrames.length === 0) return;
-      current = Math.max(0, Math.min(idx, radarFrames.length - 1));
+    function show(i) {
+      if (!frames.length) return;
+      cur = Math.max(0, Math.min(i, frames.length - 1));
 
-      // Радар
-      if (radarLayer) map.removeLayer(radarLayer);
+      if (radarL) map.removeLayer(radarL);
       if (mode === 'radar' || mode === 'both') {
-        const f = radarFrames[current];
-        radarLayer = L.tileLayer(
-          `${API}/v2/radar/${f.time}/256/{z}/{x}/{y}/${colorScheme}/1_1.png`,
-          { opacity: document.getElementById('opacity').value / 100, zIndex: 25 }
-        ).addTo(map);
+        const f = frames[cur];
+        let url = `${API}/v2/radar/${f.time}/256/{z}/{x}/{y}/${scheme}/1_1.png`;
+        if (showCells) url += '?cells=light';
+        radarL = L.tileLayer(url, {
+          opacity: document.getElementById('opacity').value / 100,
+          zIndex: 30
+        }).addTo(map);
       }
 
-      // Спутник
-      if (satLayer) map.removeLayer(satLayer);
+      if (satL) map.removeLayer(satL);
       if ((mode === 'sat' || mode === 'both') && satFrames.length) {
-        const target = radarFrames[current]?.time || Date.now() / 1000;
-        const best = satFrames.reduce((a, b) =>
-          Math.abs(b.time - target) < Math.abs(a.time - target) ? b : a
-        );
-        satLayer = L.tileLayer(
-          `${API}/v2/satellite/${best.time}/256/{z}/{x}/{y}/0/0_0.png`,
-          { opacity: 0.7, zIndex: 15 }
-        ).addTo(map);
+        const t = frames[cur]?.time || Date.now()/1000;
+        const best = satFrames.reduce((a,b) => Math.abs(b.time-t) < Math.abs(a.time-t) ? b : a);
+        satL = L.tileLayer(`${API}/v2/satellite/${best.time}/256/{z}/{x}/{y}/0/0_0.png`, {
+          opacity: 0.65, zIndex: 15
+        }).addTo(map);
       }
 
-      // UI
-      document.getElementById('timeSlider').value = current;
-      document.getElementById('frame-info').textContent =
-        `кадр ${current + 1} / ${radarFrames.length}`;
-
-      const ts = radarFrames[current].time;
-      const d = new Date(ts * 1000);
-      document.getElementById('time-display').textContent =
-        d.toLocaleString('ru-RU', {
-          day: '2-digit', month: '2-digit',
-          hour: '2-digit', minute: '2-digit'
-        });
+      document.getElementById('slider').value = cur;
+      document.getElementById('frame').textContent = `кадр ${cur+1} / ${frames.length}`;
+      const d = new Date(frames[cur].time * 1000);
+      document.getElementById('time').textContent = d.toLocaleString('ru-RU', {
+        day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'
+      });
     }
 
-    // ===================== УПРАВЛЕНИЕ =====================
-    document.getElementById('prev').onclick = () => showFrame(current - 1);
-    document.getElementById('next').onclick = () => showFrame(current + 1);
+    async function loadAlerts() {
+      if (alertsL) { map.removeLayer(alertsL); alertsL = null; }
+      if (!showAlerts) return;
+      try {
+        const r = await fetch(`${API}/v2/alerts`);
+        const g = await r.json();
+        alertsL = L.geoJSON(g, {
+          style: f => {
+            const s = (f.properties.severity||'').toLowerCase();
+            let c = '#ef4444';
+            if (s.includes('moderate') || s.includes('minor')) c = '#f59e0b';
+            if (s.includes('extreme')) c = '#dc2626';
+            return { color: c, weight: 2, fillColor: c, fillOpacity: 0.22 };
+          },
+          onEachFeature: (f, l) => {
+            const p = f.properties;
+            l.bindPopup(`<b>${p.event||'ОЯ'}</b><br>${p.headline||''}<br><small>${p.severity||''} · ${p.areaDesc||''}</small>`);
+          }
+        }).addTo(map);
+      } catch(e) { console.error(e); }
+    }
 
-    document.getElementById('play').onclick = function () {
+    // кнопки
+    document.getElementById('prev').onclick = () => show(cur-1);
+    document.getElementById('next').onclick = () => show(cur+1);
+    document.getElementById('play').onclick = function() {
       playing = !playing;
       this.textContent = playing ? '⏸' : '▶';
-      if (playing) {
-        playTimer = setInterval(() => {
-          let n = current + 1;
-          if (n >= radarFrames.length) n = 0;
-          showFrame(n);
-        }, 700);
-      } else clearInterval(playTimer);
+      if (playing) timer = setInterval(() => show(cur+1 >= frames.length ? 0 : cur+1), 700);
+      else clearInterval(timer);
     };
+    document.getElementById('slider').oninput = e => show(+e.target.value);
 
-    document.getElementById('timeSlider').oninput = function () {
-      showFrame(+this.value);
+    document.getElementById('btnRadar').onclick = function() {
+      mode='radar'; document.querySelectorAll('.top-left button').forEach(b=>b.classList.remove('active')); this.classList.add('active'); show(cur);
     };
+    document.getElementById('btnSat').onclick = function() {
+      mode='sat'; document.querySelectorAll('.top-left button').forEach(b=>b.classList.remove('active')); this.classList.add('active'); show(cur);
+    };
+    document.getElementById('btnBoth').onclick = function() {
+      mode='both'; document.querySelectorAll('.top-left button').forEach(b=>b.classList.remove('active')); this.classList.add('active'); show(cur);
+    };
+    document.getElementById('btnAlerts').onclick = function() {
+      showAlerts = !showAlerts; this.classList.toggle('active', showAlerts); loadAlerts();
+    };
+    document.getElementById('btnCells').onclick = function() {
+      showCells = !showCells; this.classList.toggle('active', showCells); show(cur);
+    };
+    document.getElementById('scheme').onchange = e => { scheme = +e.target.value; show(cur); };
+    document.getElementById('opacity').oninput = e => {
+      document.getElementById('opVal').textContent = e.target.value + '%';
+      if (radarL) radarL.setOpacity(e.target.value/100);
+    };
+    document.getElementById('locate').onclick = () => map.locate({setView:true, maxZoom:9});
 
-    // Режимы
-    document.getElementById('btnRadar').onclick = function () {
-      mode = 'radar';
-      document.querySelectorAll('.top-left button').forEach(b => b.classList.remove('active'));
-      this.classList.add('active');
-      showFrame(current);
-    };
-    document.getElementById('btnSat').onclick = function () {
-      mode = 'sat';
-      document.querySelectorAll('.top-left button').forEach(b => b.classList.remove('active'));
-      this.classList.add('active');
-      showFrame(current);
-    };
-    document.getElementById('btnBoth').onclick = function () {
-      mode = 'both';
-      document.querySelectorAll('.top-left button').forEach(b => b.classList.remove('active'));
-      this.classList.add('active');
-      showFrame(current);
-    };
-
-    // Цвет и прозрачность
-    document.getElementById('colorScheme').onchange = function () {
-      colorScheme = +this.value;
-      showFrame(current);
-    };
-    document.getElementById('opacity').oninput = function () {
-      document.getElementById('opVal').textContent = this.value + '%';
-      if (radarLayer) radarLayer.setOpacity(this.value / 100);
-    };
-
-    // Рисование
-    document.getElementById('toolPen').onclick = function () {
-      drawTool = 'pen';
-      document.getElementById('toolPen').classList.add('active');
-      document.getElementById('toolEraser').classList.remove('active');
-    };
-    document.getElementById('toolEraser').onclick = function () {
-      drawTool = 'eraser';
-      document.getElementById('toolEraser').classList.add('active');
-      document.getElementById('toolPen').classList.remove('active');
-    };
-    document.getElementById('drawWidth').oninput = function () {
-      document.getElementById('widthVal').textContent = this.value + ' px';
-    };
-    document.getElementById('clearDraw').onclick = () => {
-      drawLayer.clearLayers();
-      paths = [];
-    };
-
-    document.getElementById('locate').onclick = () => {
-      map.locate({ setView: true, maxZoom: 9 });
-    };
-
-    // Старт
-    loadData();
-    setInterval(loadData, 5 * 60 * 1000);
+    load();
+    setInterval(load, 5*60*1000);
   </script>
 </body>
 </html>
